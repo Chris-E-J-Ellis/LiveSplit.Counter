@@ -54,9 +54,9 @@ namespace LiveSplit.UI.Components
             get { return null; }
         }
 
-        public float PaddingTop { get { return 0f; } }
+        public float PaddingTop { get; set; }
         public float PaddingLeft { get { return 7f; } }
-        public float PaddingBottom { get { return 0f; } }
+        public float PaddingBottom { get; set; }
         public float PaddingRight { get { return 7f; } }
 
         protected SimpleLabel CounterNameLabel = new SimpleLabel();
@@ -90,8 +90,12 @@ namespace LiveSplit.UI.Components
             CounterFont = Settings.OverrideCounterFont ? Settings.CounterFont : state.LayoutSettings.TextFont;
 
             // Calculate Height from Font.
-            VerticalHeight = g.MeasureString("A", CounterFont).Height * 1.7f;
+            var textHeight = g.MeasureString("A", CounterFont).Height;
+            VerticalHeight = 1.2f * textHeight;
             MinimumHeight = MinimumHeight;
+
+            PaddingTop = Math.Max(0, ((this.VerticalHeight - 0.75f * textHeight) / 2f));
+            PaddingBottom = PaddingTop;
 
             // Assume most users won't count past four digits (will cause a layout resize in Horizontal Mode).
             float fourCharWidth = g.MeasureString("1000", CounterFont).Width;
