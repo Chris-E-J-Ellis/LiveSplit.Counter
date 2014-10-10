@@ -1,6 +1,7 @@
 ## LiveSplit.Counter
 A Simple counter component for LiveSplit. 
 
+[![Build status](https://ci.appveyor.com/api/projects/status/kkjedi7tui9jgeqi?svg=true)](https://ci.appveyor.com/project/Chris-E-J-Ellis/livesplit-counter)
 
 ## Packages / Requirements
 
