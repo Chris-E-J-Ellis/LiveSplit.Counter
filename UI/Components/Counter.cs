@@ -74,8 +74,16 @@
         /// </summary>
         public void SetCount(int value)
         {
-            if (Count != value)
-                Count = value;
+            Count = value;
+        }
+
+        /// <summary>
+        /// Sets the value that the counter is incremented by.
+        /// </summary>
+        /// <param name="incrementValue"></param>
+        public void SetIncrement(int incrementValue)
+        {
+            increment = incrementValue;
         }
     }
 
@@ -87,5 +95,6 @@
         bool Decrement();
         void Reset();
         void SetCount(int value);
+        void SetIncrement(int incrementValue);
     }
 }

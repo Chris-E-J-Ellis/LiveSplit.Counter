@@ -534,6 +534,7 @@
             0,
             0,
             0});
+            this.numIncrement.ValueChanged += new System.EventHandler(this.numIncrement_ValueChanged);
             // 
             // CounterComponentSettings
             // 

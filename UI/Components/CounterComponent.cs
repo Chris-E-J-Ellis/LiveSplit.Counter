@@ -19,6 +19,7 @@ namespace LiveSplit.UI.Components
             Counter = new Counter();
             this.state = state;
             Settings.CounterReinitialiseRequired += Settings_CounterReinitialiseRequired;
+            Settings.IncrementUpdateRequired += Settings_IncrementUpdateRequired;
 
             // Subscribe to input hooks.
             Settings.Hook.KeyOrButtonPressed += hook_KeyOrButtonPressed;
@@ -157,6 +158,13 @@ namespace LiveSplit.UI.Components
 
         public void Update(IInvalidator invalidator, Model.LiveSplitState state, float width, float height, LayoutMode mode)
         {
+            try
+            {
+                if (Settings.Hook != null)
+                    Settings.Hook.Poll();
+            }
+            catch { }
+
             this.state = state;
 
             CounterNameLabel.Text = Settings.CounterText;
@@ -177,12 +185,22 @@ namespace LiveSplit.UI.Components
             Settings.Hook.KeyOrButtonPressed -= hook_KeyOrButtonPressed;
         }
 
+        public int GetSettingsHashCode()
+        {
+            return Settings.GetSettingsHashCode();
+        }
+
         /// <summary>
         /// Handles the CounterReinitialiseRequired event of the Settings control.
         /// </summary>
         private void Settings_CounterReinitialiseRequired(object sender, EventArgs e)
         {
             Counter = new Counter(Settings.InitialValue, Settings.Increment);
+        }
+
+        private void Settings_IncrementUpdateRequired(object sender, EventArgs e)
+        {
+            Counter.SetIncrement(Settings.Increment);
         }
 
         // Basic support for keyboard/button input.

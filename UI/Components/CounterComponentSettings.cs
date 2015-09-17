@@ -40,9 +40,9 @@ namespace LiveSplit.UI.Components
             ResetKey = new KeyOrButton(Keys.NumPad0);
 
             // Set bindings.
-            txtIncrement.DataBindings.Add("Text", this, "IncrementKey", false, DataSourceUpdateMode.OnPropertyChanged);
-            txtDecrement.DataBindings.Add("Text", this, "DecrementKey", false, DataSourceUpdateMode.OnPropertyChanged);
-            txtReset.DataBindings.Add("Text", this, "ResetKey", false, DataSourceUpdateMode.OnPropertyChanged);
+            txtIncrement.Text = FormatKey(IncrementKey);
+            txtDecrement.Text = FormatKey(DecrementKey);
+            txtReset.Text = FormatKey(ResetKey);
             txtCounterText.DataBindings.Add("Text", this, "CounterText");
             numInitialValue.DataBindings.Add("Value", this, "InitialValue");
             numIncrement.DataBindings.Add("Value", this, "Increment");
@@ -65,21 +65,6 @@ namespace LiveSplit.UI.Components
             Load += CounterSettings_Load;
 
             RegisterHotKeys();
-
-            // Launch Input Polling task. Main LiveSplit Hook doesn't seem to be visible.
-            // Nothing fancy, if anything goes wrong, we'll just lose gamepad input.
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(100);
-                    try
-                    {
-                        Hook.Poll();
-                    }
-                    catch (Exception) { break; }
-                }
-            });
         }
 
         public CompositeHook Hook { get; set; }
@@ -110,58 +95,32 @@ namespace LiveSplit.UI.Components
         public KeyOrButton IncrementKey { get; set; }
         public KeyOrButton DecrementKey { get; set; }
         public KeyOrButton ResetKey { get; set; }
-        
-        public event EventHandler CounterReinitialiseRequired = delegate { };
-        
+
+        public event EventHandler CounterReinitialiseRequired;
+        public event EventHandler IncrementUpdateRequired;
+
         public void SetSettings(XmlNode node)
         {
             var element = (XmlElement)node;
-            Version version;
-            if (element["Version"] != null)
-                version = Version.Parse(element["Version"].InnerText);
-            else
-                version = new Version(1, 0);
+            GlobalHotkeysEnabled = SettingsHelper.ParseBool(element["GlobalHotkeysEnabled"]);
+            CounterTextColor = SettingsHelper.ParseColor(element["CounterTextColor"]);
+            CounterValueColor = SettingsHelper.ParseColor(element["CounterValueColor"]);
+            CounterFont = SettingsHelper.GetFontFromElement(element["CounterFont"]);
+            OverrideCounterFont = SettingsHelper.ParseBool(element["OverrideCounterFont"]);
+            OverrideTextColor = SettingsHelper.ParseBool(element["OverrideTextColor"]);
+            BackgroundColor = SettingsHelper.ParseColor(element["BackgroundColor"]);
+            BackgroundColor2 = SettingsHelper.ParseColor(element["BackgroundColor2"]);
+            GradientString = SettingsHelper.ParseString(element["BackgroundGradient"]);
+            CounterText = SettingsHelper.ParseString(element["CounterText"]);
+            InitialValue = SettingsHelper.ParseInt(element["InitialValue"]);
+            Increment = SettingsHelper.ParseInt(element["Increment"]);
 
-            if (version >= new Version(1, 0))
-            {
-                GlobalHotkeysEnabled = Boolean.Parse(element["GlobalHotkeysEnabled"].InnerText);
-                CounterTextColor = ParseColor(element["CounterTextColor"]);
-                CounterValueColor = ParseColor(element["CounterValueColor"]);
-                CounterFont = GetFontFromElement(element["CounterFont"]);
-                OverrideCounterFont = Boolean.Parse(element["OverrideCounterFont"].InnerText);
-                OverrideTextColor = Boolean.Parse(element["OverrideTextColor"].InnerText);
-                BackgroundColor = ParseColor(element["BackgroundColor"]);
-                BackgroundColor2 = ParseColor(element["BackgroundColor2"]);
-                GradientString = element["BackgroundGradient"].InnerText;
-                CounterText = element["CounterText"].InnerText;
-                InitialValue = Int32.Parse(element["InitialValue"].InnerText);
-                Increment = Int32.Parse(element["Increment"].InnerText);
-
-                XmlElement incrementElement = element["IncrementKey"];
-                IncrementKey = string.IsNullOrEmpty(incrementElement.InnerText) ? null : new KeyOrButton(incrementElement.InnerText);
-                XmlElement decrementElement = element["DecrementKey"];
-                DecrementKey = string.IsNullOrEmpty(decrementElement.InnerText) ? null : new KeyOrButton(decrementElement.InnerText);
-                XmlElement resetElement = element["ResetKey"];
-                ResetKey = string.IsNullOrEmpty(resetElement.InnerText) ? null : new KeyOrButton(resetElement.InnerText);
-            }
-            else
-            {
-                GlobalHotkeysEnabled = false;
-                CounterTextColor = Color.FromArgb(255, 255, 255, 255);
-                CounterValueColor = Color.FromArgb(255, 255, 255, 255);
-                CounterFont = new Font("Segoe UI", 13, FontStyle.Regular, GraphicsUnit.Pixel);
-                OverrideCounterFont = false;
-                OverrideTextColor = false;
-                BackgroundColor = Color.Transparent;
-                BackgroundColor2 = Color.Transparent;
-                BackgroundGradient = GradientType.Plain;
-                IncrementKey = new KeyOrButton(Keys.Add);
-                DecrementKey = new KeyOrButton(Keys.Subtract);
-                ResetKey = new KeyOrButton(Keys.NumPad0);
-                CounterText = "Counter: ";
-                InitialValue = 0;
-                Increment = 1;
-            }
+            XmlElement incrementElement = element["IncrementKey"];
+            IncrementKey = string.IsNullOrEmpty(incrementElement.InnerText) ? null : new KeyOrButton(incrementElement.InnerText);
+            XmlElement decrementElement = element["DecrementKey"];
+            DecrementKey = string.IsNullOrEmpty(decrementElement.InnerText) ? null : new KeyOrButton(decrementElement.InnerText);
+            XmlElement resetElement = element["ResetKey"];
+            ResetKey = string.IsNullOrEmpty(resetElement.InnerText) ? null : new KeyOrButton(resetElement.InnerText);
 
             RegisterHotKeys();
         }
@@ -169,102 +128,33 @@ namespace LiveSplit.UI.Components
         public XmlNode GetSettings(XmlDocument document)
         {
             var parent = document.CreateElement("Settings");
-            parent.AppendChild(ToElement(document, "Version", "1.0"));
-            parent.AppendChild(ToElement(document, "GlobalHotkeysEnabled", GlobalHotkeysEnabled));
-            parent.AppendChild(ToElement(document, "OverrideCounterFont", OverrideCounterFont));
-            parent.AppendChild(ToElement(document, "OverrideTextColor", OverrideTextColor));
-            parent.AppendChild(CreateFontElement(document, "CounterFont", CounterFont));
-            parent.AppendChild(ToElement(document, CounterTextColor, "CounterTextColor"));
-            parent.AppendChild(ToElement(document, CounterValueColor, "CounterValueColor"));
-            parent.AppendChild(ToElement(document, BackgroundColor, "BackgroundColor"));
-            parent.AppendChild(ToElement(document, BackgroundColor2, "BackgroundColor2"));
-            parent.AppendChild(ToElement(document, "BackgroundGradient", BackgroundGradient));
-            parent.AppendChild(ToElement(document, "CounterText", CounterText));
-            parent.AppendChild(ToElement(document, "InitialValue", InitialValue));
-            parent.AppendChild(ToElement(document, "Increment", Increment));
-            parent.AppendChild(ToElement(document, "IncrementKey", IncrementKey));
-            parent.AppendChild(ToElement(document, "DecrementKey", DecrementKey));
-            parent.AppendChild(ToElement(document, "ResetKey", ResetKey));
-
+            CreateSettingsNode(document, parent);
             return parent;
         }
 
-        private Font ChooseFont(Font previousFont, int minSize, int maxSize)
+        public int GetSettingsHashCode()
         {
-            var dialog = new FontDialog();
-            dialog.Font = previousFont;
-            dialog.MinSize = minSize;
-            dialog.MaxSize = maxSize;
-
-            try
-            {
-                var result = dialog.ShowDialog(this);
-                if (result == System.Windows.Forms.DialogResult.OK)
-                {
-                    return dialog.Font;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex);
-
-                MessageBox.Show("This font is not supported.", "Font Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            }
-
-            return previousFont;
+            return CreateSettingsNode(null, null);
         }
 
-        private Font GetFontFromElement(XmlElement element)
+        private int CreateSettingsNode(XmlDocument document, XmlElement parent)
         {
-            if (!element.IsEmpty)
-            {
-                var bf = new BinaryFormatter();
-
-                var base64String = element.InnerText;
-                var data = Convert.FromBase64String(base64String);
-                var ms = new MemoryStream(data);
-                return (Font)bf.Deserialize(ms);
-            }
-
-            return null;
-        }
-
-        private XmlElement CreateFontElement(XmlDocument document, String elementName, Font font)
-        {
-            var element = document.CreateElement(elementName);
-
-            if (font != null)
-            {
-                using (var ms = new MemoryStream())
-                {
-                    var bf = new BinaryFormatter();
-
-                    bf.Serialize(ms, font);
-                    var data = ms.ToArray();
-                    var cdata = document.CreateCDataSection(Convert.ToBase64String(data));
-                    element.InnerXml = cdata.OuterXml;
-                }
-            }
-
-            return element;
-        }
-        private Color ParseColor(XmlElement colorElement)
-        {
-            return Color.FromArgb(Int32.Parse(colorElement.InnerText, NumberStyles.HexNumber));
-        }
-
-        private XmlElement ToElement(XmlDocument document, Color color, string name)
-        {
-            var element = document.CreateElement(name);
-            element.InnerText = color.ToArgb().ToString("X8");
-            return element;
-        }
-
-        private XmlElement ToElement<T>(XmlDocument document, String name, T value)
-        {
-            var element = document.CreateElement(name);
-            element.InnerText = value.ToString();
-            return element;
+            return SettingsHelper.CreateSetting(document, parent, "Version", "1.0") ^
+            SettingsHelper.CreateSetting(document, parent, "GlobalHotkeysEnabled", GlobalHotkeysEnabled) ^
+            SettingsHelper.CreateSetting(document, parent, "OverrideCounterFont", OverrideCounterFont) ^
+            SettingsHelper.CreateSetting(document, parent, "OverrideTextColor", OverrideTextColor) ^
+            SettingsHelper.CreateSetting(document, parent, "CounterFont", CounterFont) ^
+            SettingsHelper.CreateSetting(document, parent, "CounterTextColor", CounterTextColor) ^
+            SettingsHelper.CreateSetting(document, parent, "CounterValueColor", CounterValueColor) ^
+            SettingsHelper.CreateSetting(document, parent, "BackgroundColor", BackgroundColor) ^
+            SettingsHelper.CreateSetting(document, parent, "BackgroundColor2", BackgroundColor2) ^
+            SettingsHelper.CreateSetting(document, parent, "BackgroundGradient", BackgroundGradient) ^
+            SettingsHelper.CreateSetting(document, parent, "CounterText", CounterText) ^
+            SettingsHelper.CreateSetting(document, parent, "InitialValue", InitialValue) ^
+            SettingsHelper.CreateSetting(document, parent, "Increment", Increment) ^
+            SettingsHelper.CreateSetting(document, parent, "IncrementKey", IncrementKey) ^
+            SettingsHelper.CreateSetting(document, parent, "DecrementKey", DecrementKey) ^
+            SettingsHelper.CreateSetting(document, parent, "ResetKey", ResetKey);
         }
 
         // Behaviour essentially Lifted from LiveSplit Settings.
@@ -417,7 +307,9 @@ namespace LiveSplit.UI.Components
 
         private void btnFont_Click(object sender, EventArgs e)
         {
-            CounterFont = ChooseFont(CounterFont, 7, 20);
+            var dialog = SettingsHelper.GetFontDialog(CounterFont, 7, 20);
+            dialog.FontChanged += (s, ev) => CounterFont = ((CustomFontDialog.FontChangedEventArgs)ev).NewFont;
+            dialog.ShowDialog(this);
             lblFont.Text = CounterFontString;
         }
 
@@ -455,7 +347,7 @@ namespace LiveSplit.UI.Components
 
         private void txtDecrement_Enter(object sender, EventArgs e)
         {
-            SetHotkeyHandlers((TextBox)sender, x => DecrementKey = x);
+            SetHotkeyHandlers((TextBox)sender,  x => DecrementKey = x);
         }
 
         private void txtDecrement_KeyDown(object sender, KeyEventArgs e)
@@ -477,6 +369,12 @@ namespace LiveSplit.UI.Components
         {
             InitialValue = (int)Math.Round(numInitialValue.Value, 0);
             CounterReinitialiseRequired(this, EventArgs.Empty);
+        }
+
+        private void numIncrement_ValueChanged(object sender, EventArgs e)
+        {
+            Increment = (int)Math.Round(numIncrement.Value, 0);
+            IncrementUpdateRequired(this, EventArgs.Empty);
         }
     }
 }
