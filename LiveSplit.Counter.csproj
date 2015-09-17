@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BE9D4E57-20C6-4384-A3DC-AA365E11FFD2}</ProjectGuid>
+    <ProjectGuid>{CA2C668C-1C3F-4C44-9034-99848AFE47BA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LiveSplit</RootNamespace>
@@ -40,10 +40,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LiveSplit.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>libs\LiveSplit.Core.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -53,14 +49,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="UpdateManager, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>libs\UpdateManager.dll</HintPath>
-    </Reference>
-    <Reference Include="WinFormsColor, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>libs\WinFormsColor.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -78,6 +66,16 @@
     <EmbeddedResource Include="UI\Components\CounterComponentSettings.resx">
       <DependentUpon>CounterComponentSettings.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\LiveSplit.Core\LiveSplit.Core.csproj">
+      <Project>{6de847db-20a3-4848-aeee-1b4364aecdfb}</Project>
+      <Name>LiveSplit.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\UpdateManager\UpdateManager.csproj">
+      <Project>{56dea3a0-2eb7-493b-b50f-a5e3aa8ae52a}</Project>
+      <Name>UpdateManager</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

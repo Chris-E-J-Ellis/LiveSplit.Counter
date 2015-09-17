@@ -1,15 +1,9 @@
-﻿using Fetze.WinFormsColor;
-using LiveSplit.Options;
+﻿using LiveSplit.Options;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -24,7 +18,7 @@ namespace LiveSplit.UI.Components
         {
             InitializeComponent();
 
-            this.Hook = new CompositeHook();
+            Hook = new CompositeHook();
 
             // Set default values.
             GlobalHotkeysEnabled = false;
@@ -68,7 +62,7 @@ namespace LiveSplit.UI.Components
             chkColor.CheckedChanged += chkColor_CheckedChanged;
             chkGlobalHotKeys.CheckedChanged += chkGlobalHotKeys_CheckedChanged;
 
-            this.Load += CounterSettings_Load;
+            Load += CounterSettings_Load;
 
             RegisterHotKeys();
 
@@ -81,7 +75,7 @@ namespace LiveSplit.UI.Components
                     Thread.Sleep(100);
                     try
                     {
-                        this.Hook.Poll();
+                        Hook.Poll();
                     }
                     catch (Exception) { break; }
                 }
@@ -286,13 +280,13 @@ namespace LiveSplit.UI.Components
             EventHandlerT<GamepadButton> gamepadButtonPressed = null;
 
             // Remove Input handlers.
-            Action unregisterEvents = (Action)(() =>
+            Action unregisterEvents = () =>
             {
                 txtBox.KeyDown -= handlerDown;
                 txtBox.KeyUp -= handlerUp;
                 txtBox.Leave -= leaveHandler;
-                this.Hook.AnyGamepadButtonPressed -= gamepadButtonPressed;
-            });
+                Hook.AnyGamepadButtonPressed -= gamepadButtonPressed;
+            };
 
             // Handler for KeyDown
             handlerDown = (s, x) =>
@@ -308,9 +302,9 @@ namespace LiveSplit.UI.Components
 
                 // Remove Focus.
                 txtBox.Select(0, 0);
-                this.chkGlobalHotKeys.Select();
+                chkGlobalHotKeys.Select();
 
-                txtBox.Text = this.FormatKey(keyOrButton);
+                txtBox.Text = FormatKey(keyOrButton);
 
                 // Re-Register inputs.
                 RegisterHotKeys();
@@ -328,8 +322,8 @@ namespace LiveSplit.UI.Components
                 keySetCallback(keyOrButton);
                 unregisterEvents();
                 txtBox.Select(0, 0);
-                this.chkGlobalHotKeys.Select();
-                txtBox.Text = this.FormatKey(keyOrButton);
+                chkGlobalHotKeys.Select();
+                txtBox.Text = FormatKey(keyOrButton);
                 RegisterHotKeys();
             };
 
@@ -349,14 +343,14 @@ namespace LiveSplit.UI.Components
                 Action keyOrButton = () =>
                 {
                     txtBox.Select(0, 0);
-                    this.chkGlobalHotKeys.Select();
-                    txtBox.Text = this.FormatKey(key);
+                    chkGlobalHotKeys.Select();
+                    txtBox.Text = FormatKey(key);
                     RegisterHotKeys();
                 };
 
                 // May not be in the UI thread (likely).
-                if (this.InvokeRequired)
-                    this.Invoke(keyOrButton);
+                if (InvokeRequired)
+                    Invoke(keyOrButton);
                 else
                     keyOrButton();
             };
@@ -365,7 +359,7 @@ namespace LiveSplit.UI.Components
             txtBox.KeyUp += handlerUp;
             txtBox.Leave += leaveHandler;
 
-            this.Hook.AnyGamepadButtonPressed += gamepadButtonPressed;
+            Hook.AnyGamepadButtonPressed += gamepadButtonPressed;
         }
 
         /// <summary>
@@ -375,11 +369,11 @@ namespace LiveSplit.UI.Components
         {
             try
             {
-                this.UnregisterAllHotkeys(Hook);
+                UnregisterAllHotkeys(Hook);
 
-                Hook.RegisterHotKey(this.IncrementKey);
-                Hook.RegisterHotKey(this.DecrementKey);
-                Hook.RegisterHotKey(this.ResetKey);
+                Hook.RegisterHotKey(IncrementKey);
+                Hook.RegisterHotKey(DecrementKey);
+                Hook.RegisterHotKey(ResetKey);
             }
             catch (Exception ex)
             {
@@ -398,7 +392,7 @@ namespace LiveSplit.UI.Components
 
         private string FormatKey(KeyOrButton key)
         {
-            if (!(key != (KeyOrButton)null))
+            if (key == null)
                 return "None";
             string str = key.ToString();
             if (key.IsButton)
@@ -418,12 +412,7 @@ namespace LiveSplit.UI.Components
 
         private void ColorButtonClick(object sender, EventArgs e)
         {
-            var button = (Button)sender;
-            var picker = new ColorPickerDialog();
-            picker.SelectedColor = picker.OldColor = button.BackColor;
-            picker.SelectedColorChanged += (s, x) => button.BackColor = picker.SelectedColor;
-            picker.ShowDialog(this);
-            button.BackColor = picker.SelectedColor;
+            SettingsHelper.ColorButtonClick((Button)sender, this);
         }
 
         private void btnFont_Click(object sender, EventArgs e)
@@ -456,7 +445,7 @@ namespace LiveSplit.UI.Components
 
         private void txtIncrement_Enter(object sender, EventArgs e)
         {
-            this.SetHotkeyHandlers((TextBox)sender, (Action<KeyOrButton>)(x => this.IncrementKey = x));
+            SetHotkeyHandlers((TextBox)sender, x => IncrementKey = x);
         }
 
         private void txtIncrement_KeyDown(object sender, KeyEventArgs e)
@@ -466,7 +455,7 @@ namespace LiveSplit.UI.Components
 
         private void txtDecrement_Enter(object sender, EventArgs e)
         {
-            this.SetHotkeyHandlers((TextBox)sender, (Action<KeyOrButton>)(x => this.DecrementKey = x));
+            SetHotkeyHandlers((TextBox)sender, x => DecrementKey = x);
         }
 
         private void txtDecrement_KeyDown(object sender, KeyEventArgs e)
@@ -476,7 +465,7 @@ namespace LiveSplit.UI.Components
 
         private void txtReset_Enter(object sender, EventArgs e)
         {
-            this.SetHotkeyHandlers((TextBox)sender, (Action<KeyOrButton>)(x => this.ResetKey = x));
+            SetHotkeyHandlers((TextBox)sender, x => ResetKey = x);
         }
 
         private void txtReset_KeyDown(object sender, KeyEventArgs e)
@@ -486,7 +475,7 @@ namespace LiveSplit.UI.Components
 
         private void numInitialValue_ValueChanged(object sender, EventArgs e)
         {
-            this.InitialValue = (int)Math.Round(numInitialValue.Value, 0);
+            InitialValue = (int)Math.Round(numInitialValue.Value, 0);
             CounterReinitialiseRequired(this, EventArgs.Empty);
         }
     }

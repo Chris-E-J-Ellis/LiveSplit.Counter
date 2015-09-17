@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace LiveSplit.UI.Components
+﻿namespace LiveSplit.UI.Components
 {
     public class Counter : ICounter
     {
@@ -19,7 +14,7 @@ namespace LiveSplit.UI.Components
         {
             this.initialValue = initialValue;
             this.increment = increment;
-            this.Count = initialValue;
+            Count = initialValue;
         }
         
         public int Count { get; private set; }
@@ -34,7 +29,7 @@ namespace LiveSplit.UI.Components
 
             try
             {
-                Count = checked(Count + this.increment);
+                Count = checked(Count + increment);
             }
             catch (System.OverflowException)
             {
@@ -55,7 +50,7 @@ namespace LiveSplit.UI.Components
 
             try
             {
-                Count = checked(Count - this.increment);
+                Count = checked(Count - increment);
             }
             catch (System.OverflowException)
             {
