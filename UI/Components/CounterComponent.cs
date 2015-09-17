@@ -1,14 +1,8 @@
 ﻿using LiveSplit.Model;
-using LiveSplit.Model.Comparisons;
-using LiveSplit.TimeFormatters;
-using LiveSplit.UI.Components;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using LiveSplit.Model.Input;
 
@@ -25,6 +19,7 @@ namespace LiveSplit.UI.Components
             Counter = new Counter();
             this.state = state;
             Settings.CounterReinitialiseRequired += Settings_CounterReinitialiseRequired;
+            Settings.IncrementUpdateRequired += Settings_IncrementUpdateRequired;
 
             // Subscribe to input hooks.
             Settings.Hook.KeyOrButtonPressed += hook_KeyOrButtonPressed;
@@ -94,7 +89,7 @@ namespace LiveSplit.UI.Components
             VerticalHeight = 1.2f * textHeight;
             MinimumHeight = MinimumHeight;
 
-            PaddingTop = Math.Max(0, ((this.VerticalHeight - 0.75f * textHeight) / 2f));
+            PaddingTop = Math.Max(0, ((VerticalHeight - 0.75f * textHeight) / 2f));
             PaddingBottom = PaddingTop;
 
             // Assume most users won't count past four digits (will cause a layout resize in Horizontal Mode).
@@ -158,15 +153,18 @@ namespace LiveSplit.UI.Components
             Settings.SetSettings(settings);
 
             // Initialise Counter from settings.
-            this.Counter = new Counter(Settings.InitialValue, Settings.Increment);
-        }
-
-        public void RenameComparison(string oldName, string newName)
-        {
+            Counter = new Counter(Settings.InitialValue, Settings.Increment);
         }
 
         public void Update(IInvalidator invalidator, Model.LiveSplitState state, float width, float height, LayoutMode mode)
         {
+            try
+            {
+                if (Settings.Hook != null)
+                    Settings.Hook.Poll();
+            }
+            catch { }
+
             this.state = state;
 
             CounterNameLabel.Text = Settings.CounterText;
@@ -183,7 +181,13 @@ namespace LiveSplit.UI.Components
         }
 
         public void Dispose()
-        {           
+        {
+            Settings.Hook.KeyOrButtonPressed -= hook_KeyOrButtonPressed;
+        }
+
+        public int GetSettingsHashCode()
+        {
+            return Settings.GetSettingsHashCode();
         }
 
         /// <summary>
@@ -191,24 +195,29 @@ namespace LiveSplit.UI.Components
         /// </summary>
         private void Settings_CounterReinitialiseRequired(object sender, EventArgs e)
         {
-            this.Counter = new Counter(Settings.InitialValue, Settings.Increment);
+            Counter = new Counter(Settings.InitialValue, Settings.Increment);
+        }
+
+        private void Settings_IncrementUpdateRequired(object sender, EventArgs e)
+        {
+            Counter.SetIncrement(Settings.Increment);
         }
 
         // Basic support for keyboard/button input.
         private void hook_KeyOrButtonPressed(object sender, KeyOrButton e)
         {
-            if ((Form.ActiveForm == this.state.Form && !this.Settings.GlobalHotkeysEnabled)
-                || this.Settings.GlobalHotkeysEnabled)
+            if ((Form.ActiveForm == state.Form && !Settings.GlobalHotkeysEnabled)
+                || Settings.GlobalHotkeysEnabled)
             {
                 if (e == Settings.IncrementKey)
-                    this.Counter.Increment();
+                    Counter.Increment();
 
                 if (e == Settings.DecrementKey)
-                    this.Counter.Decrement();
+                    Counter.Decrement();
 
                 if (e == Settings.ResetKey)
                 {
-                    this.Counter.Reset();
+                    Counter.Reset();
                 }
             }
         }
