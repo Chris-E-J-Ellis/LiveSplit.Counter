@@ -2,7 +2,7 @@
 {
     public class Counter : ICounter
     {
-        private int increment = 1;
+        protected int increment = 1;
         private int initialValue = 0;
 
         /// <summary>
@@ -22,7 +22,7 @@
         /// <summary>
         /// Increments this instance.
         /// </summary>
-        public bool Increment()
+        public virtual bool Increment()
         {
             if (Count == int.MaxValue)
                 return false;
@@ -43,7 +43,7 @@
         /// <summary>
         /// Decrements this instance.
         /// </summary>
-        public bool Decrement()
+        public virtual bool Decrement()
         {
             if (Count == int.MinValue)
                 return false;
@@ -72,7 +72,7 @@
         /// <summary>
         /// Sets the count.
         /// </summary>
-        public void SetCount(int value)
+        public virtual void SetCount(int value)
         {
             Count = value;
         }
@@ -84,6 +84,37 @@
         public void SetIncrement(int incrementValue)
         {
             increment = incrementValue;
+        }
+    }
+
+    public class GlobalCounter : Counter
+    {
+        public override bool Decrement()
+        {
+            var newValue = (Count - increment) % 10;
+            SetCount(newValue);
+            return true;
+        }
+
+        public override bool Increment()
+        {
+            var newValue = (Count + increment) % 10;
+            SetCount(newValue);
+            return true;
+        }
+
+        public override void SetCount(int value)
+        {
+            if (value < 0)
+            {
+                value = 0;
+            }
+            else if (value > 9)
+            {
+                value = 9;
+            }
+
+            base.SetCount(value);
         }
     }
 

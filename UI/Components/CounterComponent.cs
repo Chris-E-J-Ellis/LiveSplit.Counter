@@ -16,7 +16,7 @@ namespace LiveSplit.UI.Components
             Settings = new CounterComponentSettings();
             Cache = new GraphicsCache();
             CounterNameLabel = new SimpleLabel();
-            Counter = new Counter();
+            Counter = new GlobalCounter();
             this.state = state;
             Settings.CounterReinitialiseRequired += Settings_CounterReinitialiseRequired;
             Settings.IncrementUpdateRequired += Settings_IncrementUpdateRequired;
