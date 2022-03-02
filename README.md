@@ -1,5 +1,5 @@
 ## LiveSplit.Counter
-A Simple counter component for LiveSplit. 
+A Simple counter component for LiveSplit, customized for "The Legend of Zelda" Global Tracking. 
 
 ## Packages / Requirements
 
